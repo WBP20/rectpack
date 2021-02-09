@@ -4,7 +4,7 @@ from .geometry import Rectangle
 class PackingAlgorithm(object):
     """PackingAlgorithm base class"""
 
-    def __init__(self, width, height, rot=True, bid=None, *args, **kwargs):
+    def __init__(self, width, height, weight, rot=True, bid=None, *args, **kwargs):
         """
         Initialize packing algorithm
 
@@ -16,10 +16,11 @@ class PackingAlgorithm(object):
         """
         self.width = width
         self.height = height
+        self.weight = weight
         self.rot = rot
         self.rectangles = []
         self.bid = bid
-        self._surface = Rectangle(0, 0, width, height)
+        self._surface = Rectangle(0, 0, width, height, weight)
         self.reset()
 
     def __len__(self):
@@ -28,7 +29,7 @@ class PackingAlgorithm(object):
     def __iter__(self):
         return iter(self.rectangles)
 
-    def _fits_surface(self, width, height):
+    def _fits_surface(self, width, height, weight):
         """
         Test surface is big enough to place a rectangle
 
@@ -62,8 +63,12 @@ class PackingAlgorithm(object):
             int, float: Area
         """
         return sum(r.area() for r in self)
+    
+    def used_weight(self):
 
-    def fitness(self, width, height, rot = False):
+        return sum(r.weight for r in self)
+
+    def fitness(self, width, height, weight, rot = False):
         """
         Metric used to rate how much space is wasted if a rectangle is placed.
         Returns a value greater or equal to zero, the smaller the value the more 
@@ -80,7 +85,7 @@ class PackingAlgorithm(object):
         """
         raise NotImplementedError
         
-    def add_rect(self, width, height, rid=None):
+    def add_rect(self, width, height, weight, rid=None):
         """
         Add rectangle of widthxheight dimensions.
 
@@ -100,11 +105,11 @@ class PackingAlgorithm(object):
         Returns a list with all rectangles placed into the surface.
         
         Returns:
-            List: Format [(x, y, width, height, rid), ...]
+            List: Format [(rid, x, y, width, height), ...]
         """
         rectangle_list = []
         for r in self:
-            rectangle_list.append((r.x, r.y, r.width, r.height, r.rid))
+            rectangle_list.append((r.x, r.y, r.width, r.height, r.weight, r.rid))
 
         return rectangle_list
 
@@ -113,7 +118,7 @@ class PackingAlgorithm(object):
         Check for collisions between rectangles, also check all are placed
         inside surface.
         """
-        surface = Rectangle(0, 0, self.width, self.height)
+        surface = Rectangle(0, 0, self.width, self.height, self.weight)
 
         for r in self:
             if not surface.contains(r):
